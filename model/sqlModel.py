@@ -14,13 +14,15 @@ class SqlModel():
 
     # 析构函数
     def __del__(self):
+        self.cur.close()
         self.db.close()
 
     # 增
     def sqlInsert(self, sql):
         try:
+            self.db.ping(reconnect=True)
             self.cur.execute(sql)
-            data = self.db.insert_id()
+            data = self.db.insert_id()  ###要在db.commit()之前才能起作用！！！！
             self.db.commit()
             print("插入成功")
             return data
@@ -32,6 +34,7 @@ class SqlModel():
     # 删
     def sqlDelete(self, sql):
         try:
+            self.db.ping(reconnect=True)
             self.cur.execute(sql)
             self.db.commit()
             print("删除成功")
@@ -43,6 +46,7 @@ class SqlModel():
     # 改
     def sqlUpdate(self, sql):
         try:
+            self.db.ping(reconnect=True)
             self.cur.execute(sql)
             self.db.commit()
             print("更新成功")
@@ -54,13 +58,14 @@ class SqlModel():
     # 查
 
     def sqlSelect(self, sql: str, get_one: bool = False):
+
         try:
+            self.db.ping(reconnect=True)  ###现在设置的时间是10分钟，但是10分钟没有连接上就会自动断掉，然后连接销毁，也不会重连了！！！！！！
             self.cur.execute(sql)
             if get_one:
 
                 data = self.cur.fetchone()
             else:
-
                 data = self.cur.fetchall()
             self.db.commit()
             print("查询成功")
@@ -71,7 +76,7 @@ class SqlModel():
 
 '''
 if __name__ == "__main__":
-    
+   
     目前只有增删改查功能
     类：SqlModel
     类方法:sqlSelect(sql,get_one=false) sql为命令，get_one：Ture：只拿一条 Fals：拿全部 ；默认为False
@@ -80,7 +85,7 @@ if __name__ == "__main__":
            sqlUpdate(sql)
     若sql内用变量，替换方法在下面例子中，两种格式化方法
 
-    
+   
     # 例子------------------
     # 创建实例
     sqlmodel = SqlModel()
@@ -89,7 +94,8 @@ if __name__ == "__main__":
     ## 变量替换方式：两种方式效果相同---------------------------------
     sql = "INSERT INTO xmy(sname,passwd) VALUES ('%s','%s')" % ("123", "456")
     ss = "INSERT FROM xmy(sname,passwd) VALUES ({v1},{v2})".format(v1="123", v2="456")
-    sqlmodel.sqlInsert(sql)
+    data2 = sqlmodel.sqlInsert(sql)
+    print("insert:", data2)
 
     # 查询
     sql0 = "SElECT * FROM xmy"
@@ -102,4 +108,11 @@ if __name__ == "__main__":
     # 修改
     sql3 = "UPDATE xmy set sname='xixi' WHERE xmy.sid=33"
     sqlmodel.sqlUpdate(sql3)
+
+    # 模糊查询
+    sql3 = """ SELECT * 
+            FROM user
+            WHERE user.uname LIKE '%{value}%'""".format(value="string")
+    data = sqlmodel.sqlSelect(sql3)
+    print(data)
 '''
